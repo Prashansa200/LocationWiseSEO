@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Location-Based SEO</title>
+  <style>
+    body { font-family: sans-serif; padding: 50px; text-align:center; background:#f4f4f4; }
+    .card { background:white; padding:30px; border-radius:10px; box-shadow:0 4px 12px rgba(0,0,0,0.1); max-width:600px; margin:auto; }
+    button { padding:10px 20px; border:none; border-radius:6px; background:#007bff; color:white; cursor:pointer; margin-top:20px; }
+    button:hover{background:#0056b3;}
+    ul{text-align:left; margin-top:10px;}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>🌍 SEO Results Based on Your Location</h2>
+    <button onclick="getLocation()">Allow Location Access & Fetch SEO</button>
+    <div id="output"></div>
+  </div>
+
+  <script>
+    const API_URL = "http://127.0.0.1:8000/api/seo-by-coords/";
+
+    function getLocation() {
+      if(navigator.geolocation){
+        navigator.geolocation.getCurrentPosition(sendLocation, showError);
+      } else {
+        document.getElementById("output").innerHTML="Geolocation not supported by your browser.";
+      }
+    }
+
+    async function sendLocation(position){
+      const latitude = position.coords.latitude;
+      const longitude = position.coords.longitude;
+      const url = prompt("Enter the website URL to fetch SEO for (e.g., example.com):");
+
+      const output = document.getElementById("output");
+      output.innerHTML="<p>Fetching SEO results...</p>";
+
+      try{
+        const res = await fetch(API_URL, {
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body: JSON.stringify({latitude, longitude, url})
+        });
+        if(!res.ok) throw new Error("Failed to fetch SEO results");
+        const data = await res.json();
+        displayResults(data);
+      } catch(e){
+        output.innerHTML=`<p style="color:red;">Error: ${e.message}</p>`;
+      }
+    }
+
+    function displayResults(data){
+      const output=document.getElementById("output");
+      const place = data.resolved_place || {};
+      const city = place.city||"Unknown";
+      const region = place.region||"Unknown";
+      const country = place.country||"Unknown";
+
+      let listHTML="";
+      if(data.seo_results.length>0){
+        listHTML=data.seo_results.map(r=>`<li><b>${r.ranking}. ${r.title}</b><br>Snippet: ${r.snippet}<br>URL: ${r.link}<br>Content Length: ${r.content_length}</li>`).join("");
+      } else{
+        listHTML="<li>No SEO results found for this location.</li>";
+      }
+
+      output.innerHTML=`
+        <p><b>City:</b> ${city} | <b>Region:</b> ${region} | <b>Country:</b> ${country}</p>
+        <h4>SEO Results:</h4>
+        <ul>${listHTML}</ul>
+      `;
+    }
+
+    function showError(error){
+      const output=document.getElementById("output");
+      switch(error.code){
+        case error.PERMISSION_DENIED: output.innerHTML="❌ User denied location access."; break;
+        case error.POSITION_UNAVAILABLE: output.innerHTML="⚠️ Location unavailable."; break;
+        case error.TIMEOUT: output.innerHTML="⏰ Request timed out."; break;
+        default: output.innerHTML="⚠️ Unknown error occurred."; break;
+      }
+    }
+  </script>
+</body>
+</html>
