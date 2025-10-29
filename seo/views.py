@@ -1,4 +1,5 @@
 from django.shortcuts import render
+import os
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -8,7 +9,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 
 # Replace with your actual SerpApi key
-SERP_API_KEY = "a04b84ffd85845896112362caa545b2a4cf79a448cb0f0050cb3bae33232a230"
+SERP_API_KEY = os.environ.get("SERP_API_KEY")
 
 # ---------- Helper function: Convert coords to city/region/country ----------
 def coords_to_place(lat, lon):
